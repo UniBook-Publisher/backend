@@ -77,6 +77,9 @@ public class ChapterServiceImplTest {
     private UserLookupService userLookupService;
 
     @Mock
+    private RevisionTextReader  revisionTextReader;
+
+    @Mock
     private AppLogger logger;
 
     @Mock
@@ -478,10 +481,8 @@ public class ChapterServiceImplTest {
         when(revisionRepository.findById(fromRevisionId)).thenReturn(Optional.of(fromRevision));
         when(revisionRepository.findById(toRevisionId)).thenReturn(Optional.of(toRevision));
 
-        when(fileStorageService.get("path/from.md"))
-                .thenReturn(new ByteArrayInputStream("Старий текст".getBytes(StandardCharsets.UTF_8)));
-        when(fileStorageService.get("path/to.md"))
-                .thenReturn(new ByteArrayInputStream("Новий текст".getBytes(StandardCharsets.UTF_8)));
+        when(revisionTextReader.readText("path/from.md")).thenReturn("Старий текст");
+        when(revisionTextReader.readText("path/to.md")).thenReturn("Новий текст");
 
         when(diffService.compare(fromRevisionId, toRevisionId, List.of("Старий текст"), List.of("Новий текст")))
                 .thenReturn(expectedResponse);
@@ -509,13 +510,8 @@ public class ChapterServiceImplTest {
         when(revisionRepository.findById(fromRevisionId)).thenReturn(Optional.of(fromRevision));
         when(revisionRepository.findById(toRevisionId)).thenReturn(Optional.of(toRevision));
 
-        InputStream failingStream = new InputStream() {
-            @Override
-            public int read() throws IOException {
-                throw new IOException("Stream corrupted");
-            }
-        };
-        when(fileStorageService.get("path/corrupted.md")).thenReturn(failingStream);
+        when(revisionTextReader.readText("path/corrupted.md"))
+                .thenThrow(new FileReadException("path/corrupted.md", new IOException("Stream corrupted")));
 
         assertThrows(FileReadException.class, () -> chapterService.getDiffChapter(chapterId, request));
     }
@@ -591,6 +587,35 @@ public class ChapterServiceImplTest {
         when(revisionRepository.findById(fromRevisionId)).thenReturn(Optional.of(fromRevision));
         when(revisionRepository.findById(toRevisionId)).thenReturn(Optional.of(toRevision));
         assertThrows(BusinessRuleViolationException.class, () -> chapterService.getDiffChapter(chapterId, request));
+    }
+
+    @Test
+    @DisplayName("Успішне отримання вмісту ревізії за номером версії")
+    void getRevisionContent_Success() {
+        UUID chapterId = UUID.randomUUID();
+        int versionNumber = 1;
+        String fileUrl = "path/revision_v1.txt";
+        String content = "Текст розділу версії 1";
+
+        Revision revision = mock(Revision.class);
+        when(revision.getFileUrl()).thenReturn(fileUrl);
+
+        when(revisionRepository.findByChapter_ChapterIdAndVersionNumber(chapterId, versionNumber)).thenReturn(Optional.of(revision));
+        when(revisionTextReader.readText(fileUrl)).thenReturn(content);
+
+        String finalContent = chapterService.getRevisionContent(chapterId, versionNumber);
+
+        assertEquals(content, finalContent);
+        verify(revisionTextReader, times(1)).readText(fileUrl);
+    }
+
+    @Test
+    @DisplayName("Помилка отримання вмісту ревізії, якщо ревізію не знайдено")
+    void getRevisionContent_ThrowsRevisionNotFoundException() {
+        UUID chapterId = UUID.randomUUID();
+        int versionNumber = 1;
+        when(revisionRepository.findByChapter_ChapterIdAndVersionNumber(chapterId, versionNumber)).thenReturn(Optional.empty());
+        assertThrows(RevisionNotFoundException.class, () -> chapterService.getRevisionContent(chapterId, versionNumber));
     }
 
     @Test

@@ -13,4 +13,6 @@ public interface RevisionRepository extends JpaRepository<Revision, UUID> {
     Optional<Revision> findTopByChapter_ChapterIdOrderByVersionNumberDesc(UUID chapterId);
 
     List<Revision> findAllByChapter_ChapterIdOrderByVersionNumberAsc(UUID chapterId);
+
+    Optional<Revision> findByChapter_ChapterIdAndVersionNumber(UUID chapterId, Integer versionNumber);
 }
