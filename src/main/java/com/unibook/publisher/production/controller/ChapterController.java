@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
+import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -44,11 +45,11 @@ public class ChapterController {
 
     @PostMapping("/manuscripts/{manuscriptId}/chapters")
     @Operation(summary = "Create a chapter", description = "Adds a chapter to a manuscript that is IN_PROGRESS. Only the author of the manuscript can do this")
-        @ApiResponse(responseCode = "200", description = "Chapter successfully created")
-        @ApiResponse(responseCode = "400", description = "Request validation error", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
-        @ApiResponse(responseCode = "403", description = "The caller is not the author of the manuscript", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
-        @ApiResponse(responseCode = "404", description = "Manuscript not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
-        @ApiResponse(responseCode = "422", description = "The manuscript is not in IN_PROGRESS status", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "200", description = "Chapter successfully created")
+    @ApiResponse(responseCode = "400", description = "Request validation error", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "403", description = "The caller is not the author of the manuscript", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "404", description = "Manuscript not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "422", description = "The manuscript is not in IN_PROGRESS status", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     public ResponseEntity<ChapterResponse> createChapter(
             @Parameter(description = "Manuscript ID", required = true, example = "7c9e6679-7425-40de-944b-e07fc1f90ae7")
             @PathVariable UUID manuscriptId,
@@ -61,22 +62,22 @@ public class ChapterController {
 
     @GetMapping("/manuscripts/{manuscriptId}/chapters")
     @Operation(summary = "Get chapters of a manuscript", description = "Returns all chapters of the manuscript ordered by chapter index")
-        @ApiResponse(responseCode = "200", description = "Chapters successfully retrieved")
-        @ApiResponse(responseCode = "404", description = "Manuscript not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "200", description = "Chapters successfully retrieved")
+    @ApiResponse(responseCode = "404", description = "Manuscript not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     public ResponseEntity<List<ChapterResponse>> getChaptersByManuscriptId(
             @Parameter(description = "Manuscript ID", required = true, example = "7c9e6679-7425-40de-944b-e07fc1f90ae7")
             @PathVariable UUID manuscriptId
     ) {
-        return  ResponseEntity.ok(chapterService.getChaptersByManuscriptId(manuscriptId));
+        return ResponseEntity.ok(chapterService.getChaptersByManuscriptId(manuscriptId));
     }
 
     @PutMapping("/chapters/{chapterId}")
     @Operation(summary = "Update a chapter", description = "Changes the title and index of a chapter. Only the author of an IN_PROGRESS manuscript can do this")
-        @ApiResponse(responseCode = "200", description = "Chapter successfully updated")
-        @ApiResponse(responseCode = "400", description = "Request validation error", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
-        @ApiResponse(responseCode = "403", description = "The caller is not the author of the manuscript", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
-        @ApiResponse(responseCode = "404", description = "Chapter not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
-        @ApiResponse(responseCode = "422", description = "The manuscript is not in IN_PROGRESS status", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "200", description = "Chapter successfully updated")
+    @ApiResponse(responseCode = "400", description = "Request validation error", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "403", description = "The caller is not the author of the manuscript", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "404", description = "Chapter not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "422", description = "The manuscript is not in IN_PROGRESS status", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     public ResponseEntity<ChapterResponse> updateChapter(
             @Parameter(description = "Chapter ID", required = true, example = "9b2d5c1e-3f4a-4b8e-a1c7-5d6e7f8a9b0c")
             @PathVariable UUID chapterId,
@@ -88,10 +89,10 @@ public class ChapterController {
 
     @DeleteMapping("/chapters/{chapterId}")
     @Operation(summary = "Delete a chapter", description = "Deletes a chapter together with its revisions. Only the author of an IN_PROGRESS manuscript can do this")
-        @ApiResponse(responseCode = "204", description = "Chapter successfully deleted")
-        @ApiResponse(responseCode = "403", description = "The caller is not the author of the manuscript", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
-        @ApiResponse(responseCode = "404", description = "Chapter not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
-        @ApiResponse(responseCode = "422", description = "The manuscript is not in IN_PROGRESS status", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "204", description = "Chapter successfully deleted")
+    @ApiResponse(responseCode = "403", description = "The caller is not the author of the manuscript", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "404", description = "Chapter not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "422", description = "The manuscript is not in IN_PROGRESS status", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     public ResponseEntity<Void> deleteChapter(
             @Parameter(description = "Chapter ID", required = true, example = "9b2d5c1e-3f4a-4b8e-a1c7-5d6e7f8a9b0c")
             @PathVariable UUID chapterId,
@@ -105,18 +106,18 @@ public class ChapterController {
             value = "/chapters/{chapterId}/revisions",
             consumes = MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Upload a chapter revision", description = "Creates a new revision of the chapter from an uploaded file and increments the version number. Available to the author and the assigned editor while the manuscript is IN_PROGRESS")
-        @ApiResponse(responseCode = "200", description = "Revision successfully created")
-        @ApiResponse(responseCode = "400", description = "Request validation error", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
-        @ApiResponse(responseCode = "403", description = "The caller is neither the author nor the assigned editor", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
-        @ApiResponse(responseCode = "404", description = "Chapter, manuscript or uploaded file not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
-        @ApiResponse(responseCode = "422", description = "The manuscript is not in IN_PROGRESS status", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "200", description = "Revision successfully created")
+    @ApiResponse(responseCode = "400", description = "Request validation error", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "403", description = "The caller is neither the author nor the assigned editor", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "404", description = "Chapter, manuscript or uploaded file not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "422", description = "The manuscript is not in IN_PROGRESS status", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     public ResponseEntity<RevisionResponse> uploadRevision(
             @Parameter(description = "Chapter ID", required = true, example = "9b2d5c1e-3f4a-4b8e-a1c7-5d6e7f8a9b0c")
             @PathVariable UUID chapterId,
             @AuthenticationPrincipal AuthenticatedUser currentUser,
             @RequestPart("file") MultipartFile file
     ) {
-        if(file.isEmpty()) throw new FileIsEmptyException();
+        if (file.isEmpty()) throw new FileIsEmptyException();
         try {
             return ResponseEntity.ok(chapterService.uploadRevision(
                     chapterId,
@@ -134,8 +135,8 @@ public class ChapterController {
 
     @GetMapping("/chapters/{chapterId}/revisions")
     @Operation(summary = "Get chapter revisions", description = "Returns all revisions of the chapter ordered by version number ascending")
-        @ApiResponse(responseCode = "200", description = "Revisions successfully retrieved")
-        @ApiResponse(responseCode = "404", description = "Chapter not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "200", description = "Revisions successfully retrieved")
+    @ApiResponse(responseCode = "404", description = "Chapter not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     public ResponseEntity<List<RevisionResponse>> getRevisionsByChapterId(
             @Parameter(description = "Chapter ID", required = true, example = "9b2d5c1e-3f4a-4b8e-a1c7-5d6e7f8a9b0c")
             @PathVariable UUID chapterId
@@ -145,10 +146,10 @@ public class ChapterController {
 
     @GetMapping("/{chapterId}/diff")
     @Operation(summary = "Compare two chapter revisions", description = "Returns the text difference between two revisions of the same chapter")
-        @ApiResponse(responseCode = "200", description = "Difference successfully calculated")
-        @ApiResponse(responseCode = "400", description = "Missing or invalid query parameters", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
-        @ApiResponse(responseCode = "404", description = "Chapter or revision not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
-        @ApiResponse(responseCode = "422", description = "The requested revisions do not belong to this chapter", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "200", description = "Difference successfully calculated")
+    @ApiResponse(responseCode = "400", description = "Missing or invalid query parameters", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "404", description = "Chapter or revision not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "422", description = "The requested revisions do not belong to this chapter", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     public ResponseEntity<DiffResponse> getDiffChapter(
             @Parameter(description = "Chapter ID", required = true, example = "9b2d5c1e-3f4a-4b8e-a1c7-5d6e7f8a9b0c")
             @PathVariable UUID chapterId,
@@ -156,5 +157,21 @@ public class ChapterController {
     ) {
         DiffResponse response = chapterService.getDiffChapter(chapterId, request);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping(
+            value = "/chapters/{chapterId}/revisions/{versionNumber}/content",
+            produces = TEXT_PLAIN_VALUE + ";charset=UTF-8")
+    @Operation(summary = "Get chapter revision content", description = "Returns the content of a specific revision of a chapter as plain text")
+    @ApiResponse(responseCode = "200", description = "Content successfully retrieved")
+    @ApiResponse(responseCode = "404", description = "Chapter or revision not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    public ResponseEntity<String> getRevisionContent(
+            @Parameter(description = "Chapter ID", required = true, example = "9b2d5c1e-3f4a-4b8e-a1c7-5d6e7f8a9b0c")
+            @PathVariable UUID chapterId,
+            @Parameter(description = "Revision version number", required = true, example = "1")
+            @PathVariable int versionNumber
+    ) {
+        String content = chapterService.getRevisionContent(chapterId, versionNumber);
+        return ResponseEntity.ok(content);
     }
 }

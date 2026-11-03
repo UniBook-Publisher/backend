@@ -13,7 +13,6 @@ import com.unibook.publisher.common.exception.notfound.RevisionNotFoundException
 import com.unibook.publisher.common.exception.notfound.ThreadNotFoundException;
 import com.unibook.publisher.common.exception.security.ForbiddenActionException;
 import com.unibook.publisher.common.exception.state.InvalidStateTransitionException;
-import com.unibook.publisher.common.exception.storage.FileReadException;
 import com.unibook.publisher.common.logging.AppLogger;
 import com.unibook.publisher.common.security.AuthenticatedUser;
 import com.unibook.publisher.identity.api.UserLookupService;
@@ -26,14 +25,10 @@ import com.unibook.publisher.production.entity.response.ThreadResponse;
 import com.unibook.publisher.production.enums.SuggestionStatus;
 import com.unibook.publisher.production.enums.ThreadStatus;
 import com.unibook.publisher.production.repository.*;
-import com.unibook.publisher.storage.FileStorageService;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -46,17 +41,19 @@ public class FeedbackThreadServiceImpl implements FeedbackThreadService {
     private final ChapterRepository chapterRepository;
     private final RevisionRepository revisionRepository;
     private final TeamAssignmentRepository teamAssignmentRepository;
-    private final FileStorageService fileStorageService;
     private final UserLookupService userLookupService;
+    private final RevisionTextReader revisionTextReader;
     private final ApplicationEventPublisher publisher;
     private final AppLogger logger;
 
     public FeedbackThreadServiceImpl(
             FeedbackThreadRepository threadRepository,
             ThreadMessageRepository messageRepository,
-            ChapterRepository chapterRepository, RevisionRepository revisionRepository,
+            ChapterRepository chapterRepository,
+            RevisionRepository revisionRepository,
             TeamAssignmentRepository teamAssignmentRepository,
-            FileStorageService fileStorageService, UserLookupService userLookupService,
+            UserLookupService userLookupService,
+            RevisionTextReader revisionTextReader,
             ApplicationEventPublisher publisher,
             AppLogger logger
     ) {
@@ -65,8 +62,8 @@ public class FeedbackThreadServiceImpl implements FeedbackThreadService {
         this.chapterRepository = chapterRepository;
         this.revisionRepository = revisionRepository;
         this.teamAssignmentRepository = teamAssignmentRepository;
-        this.fileStorageService = fileStorageService;
         this.userLookupService = userLookupService;
+        this.revisionTextReader = revisionTextReader;
         this.publisher = publisher;
         this.logger = logger;
     }
@@ -136,7 +133,7 @@ public class FeedbackThreadServiceImpl implements FeedbackThreadService {
         Revision revision = revisionRepository.findById(revisionId)
                 .orElseThrow(() -> new RevisionNotFoundException(revisionId));
 
-        String textContent = readRevisionContent(revision.getFileUrl());
+        String textContent = revisionTextReader.readText(revision.getFileUrl());
         if (textContent.isEmpty())
             throw new EmptyRevisionTextException();
 
@@ -148,15 +145,6 @@ public class FeedbackThreadServiceImpl implements FeedbackThreadService {
         String quote = textContent.substring(from, to);
         if (!quote.equals(request.quotedText()))
             throw new InvalidQuoteException(request.quotedText());
-    }
-
-    private String readRevisionContent(String fileUrl) {
-        try (InputStream inputStream = fileStorageService.get(fileUrl)) {
-            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            logger.error("Не вдалося прочитати файл ревізії: {}", fileUrl, e);
-            throw new FileReadException(fileUrl, e);
-        }
     }
 
     @Override

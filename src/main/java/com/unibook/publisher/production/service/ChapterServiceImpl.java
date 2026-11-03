@@ -10,7 +10,6 @@ import com.unibook.publisher.common.exception.notfound.ManuscriptNotFoundExcepti
 import com.unibook.publisher.common.exception.notfound.RevisionNotFoundException;
 import com.unibook.publisher.common.exception.security.ForbiddenActionException;
 import com.unibook.publisher.common.exception.state.InvalidStateTransitionException;
-import com.unibook.publisher.common.exception.storage.FileReadException;
 import com.unibook.publisher.common.logging.AppLogger;
 import com.unibook.publisher.common.security.AuthenticatedUser;
 import com.unibook.publisher.identity.api.UserLookupService;
@@ -35,7 +34,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -56,17 +54,19 @@ public class ChapterServiceImpl implements ChapterService {
     private final RevisionRepository revisionRepository;
     private final TeamAssignmentRepository teamAssignmentRepository;
     private final DiffService diffService;
+    private final RevisionTextReader revisionTextReader;
     private final FileStorageService fileStorageService;
     private final UserLookupService userLookupService;
     private final ApplicationEventPublisher publisher;
     private final AppLogger logger;
 
-    public ChapterServiceImpl(ChapterRepository chapterRepository, ManuscriptRepository manuscriptRepository, RevisionRepository revisionRepository, TeamAssignmentRepository teamAssignmentRepository, DiffService diffService, FileStorageService fileStorageService, UserLookupService userLookupService, ApplicationEventPublisher publisher, AppLogger logger) {
+    public ChapterServiceImpl(ChapterRepository chapterRepository, ManuscriptRepository manuscriptRepository, RevisionRepository revisionRepository, TeamAssignmentRepository teamAssignmentRepository, DiffService diffService, RevisionTextReader revisionTextReader, FileStorageService fileStorageService, UserLookupService userLookupService, ApplicationEventPublisher publisher, AppLogger logger) {
         this.chapterRepository = chapterRepository;
         this.manuscriptRepository = manuscriptRepository;
         this.revisionRepository = revisionRepository;
         this.teamAssignmentRepository = teamAssignmentRepository;
         this.diffService = diffService;
+        this.revisionTextReader = revisionTextReader;
         this.fileStorageService = fileStorageService;
         this.userLookupService = userLookupService;
         this.publisher = publisher;
@@ -261,8 +261,11 @@ public class ChapterServiceImpl implements ChapterService {
         if (!fromRevision.getChapterId().equals(chapterId) || !toRevision.getChapterId().equals(chapterId))
             throw new BusinessRuleViolationException("Запитані ревізії не належать розділу з ID: " + chapterId);
 
-        List<String> oldLines = readRevisionLines(fromRevision.getFileUrl());
-        List<String> newLines = readRevisionLines(toRevision.getFileUrl());
+        String oldText = revisionTextReader.readText(fromRevision.getFileUrl());
+        String newText = revisionTextReader.readText(toRevision.getFileUrl());
+
+        List<String> oldLines = Arrays.asList(oldText.split("\r?\n"));
+        List<String> newLines = Arrays.asList(newText.split("\r?\n"));
 
         return diffService.compare(
                 request.fromRevisionId(),
@@ -272,15 +275,12 @@ public class ChapterServiceImpl implements ChapterService {
         );
     }
 
-    private List<String> readRevisionLines(String fileUrl) {
-        try (InputStream inputStream = fileStorageService.get(fileUrl);
-             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+    @Override
+    public String getRevisionContent(UUID chapterId, int versionNumber) {
+        Revision revision = revisionRepository.findByChapter_ChapterIdAndVersionNumber(chapterId, versionNumber)
+                .orElseThrow(() -> new RevisionNotFoundException(chapterId, versionNumber));
 
-            return reader.lines().toList();
-        } catch (UncheckedIOException | IOException e) {
-            logger.error("Не вдалося прочитати файл ревізії зі сховища: {}", fileUrl, e);
-            throw new FileReadException(fileUrl, e);
-        }
+        return revisionTextReader.readText(revision.getFileUrl());
     }
 
     @Override
