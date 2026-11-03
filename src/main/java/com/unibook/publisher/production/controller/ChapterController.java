@@ -1,5 +1,6 @@
 package com.unibook.publisher.production.controller;
 
+import com.unibook.publisher.common.exception.badrequest.FileIsEmptyException;
 import com.unibook.publisher.common.exception.storage.FileReadException;
 import com.unibook.publisher.common.logging.AppLogger;
 import com.unibook.publisher.common.security.AuthenticatedUser;
@@ -26,6 +27,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
+
+import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -98,7 +101,9 @@ public class ChapterController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/chapters/{chapterId}/revisions")
+    @PostMapping(
+            value = "/chapters/{chapterId}/revisions",
+            consumes = MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Upload a chapter revision", description = "Creates a new revision of the chapter from an uploaded file and increments the version number. Available to the author and the assigned editor while the manuscript is IN_PROGRESS")
         @ApiResponse(responseCode = "200", description = "Revision successfully created")
         @ApiResponse(responseCode = "400", description = "Request validation error", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
@@ -109,8 +114,9 @@ public class ChapterController {
             @Parameter(description = "Chapter ID", required = true, example = "9b2d5c1e-3f4a-4b8e-a1c7-5d6e7f8a9b0c")
             @PathVariable UUID chapterId,
             @AuthenticationPrincipal AuthenticatedUser currentUser,
-            @RequestParam MultipartFile file
+            @RequestPart("file") MultipartFile file
     ) {
+        if(file.isEmpty()) throw new FileIsEmptyException();
         try {
             return ResponseEntity.ok(chapterService.uploadRevision(
                     chapterId,
