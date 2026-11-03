@@ -85,7 +85,7 @@ public class CoverVersionController {
     public ResponseEntity<CoverVersionResponse> approveCoverVersion(
             @Parameter(description = "Manuscript ID", required = true, example = "7c9e6679-7425-40de-944b-e07fc1f90ae7")
             @PathVariable UUID manuscriptId,
-            @Parameter(description = "Cover version ID", required = true, example = "8c9e6679-7425-40de-944b-e07fc1f90ae7")
+            @Parameter(description = "Cover version number", required = true, example = "1")
             @PathVariable int versionNumber,
             @AuthenticationPrincipal AuthenticatedUser currentUser) {
         return ResponseEntity.ok(coverVersionService.approveCoverVersion(manuscriptId, versionNumber, currentUser));

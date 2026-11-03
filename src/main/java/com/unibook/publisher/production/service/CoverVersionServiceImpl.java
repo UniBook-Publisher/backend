@@ -4,6 +4,7 @@ import com.unibook.publisher.common.enums.UserRole;
 import com.unibook.publisher.common.event.CoverVersionAddedEvent;
 import com.unibook.publisher.common.exception.badrequest.InvalidFileTypeException;
 import com.unibook.publisher.common.exception.business.FileUploadException;
+import com.unibook.publisher.common.exception.notfound.CoverVersionNotFoundException;
 import com.unibook.publisher.common.exception.notfound.ManuscriptNotFoundException;
 import com.unibook.publisher.common.exception.security.ForbiddenActionException;
 import com.unibook.publisher.common.exception.state.InvalidStateTransitionException;
@@ -168,6 +169,8 @@ public class CoverVersionServiceImpl implements CoverVersionService {
         }
 
         CoverVersion cover = coverVersionRepository.findByManuscript_ManuscriptIdAndVersionNumber(manuscriptId, versionNumber);
+        if(cover == null) throw new CoverVersionNotFoundException(versionNumber, manuscriptId);
+
         coverVersionRepository.unapproveAllByManuscript_ManuscriptId(manuscriptId);
         cover.setApproved(true);
         CoverVersion saved = coverVersionRepository.save(cover);
