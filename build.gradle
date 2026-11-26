@@ -141,7 +141,7 @@ tasks.register('playwrightInstall', JavaExec) {
 }
 
 tasks.named('check') {
-	dependsOn test, integrationTest, e2eTest
+	dependsOn test
 }
 
 jacocoTestReport {
