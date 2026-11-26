@@ -1,6 +1,7 @@
 package com.unibook.publisher.production.service;
 
 import com.unibook.publisher.common.enums.UserRole;
+import com.unibook.publisher.common.exception.notfound.CoverVersionNotFoundException;
 import com.unibook.publisher.common.security.AuthenticatedUser;
 import static com.unibook.publisher.testutil.TestUsers.asUser;
 import com.unibook.publisher.common.event.CoverVersionAddedEvent;
@@ -352,6 +353,34 @@ public class CoverVersionServiceImplTest {
 
         AuthenticatedUser notAuthorUser = asUser(notAuthorId);
         assertThrows(ForbiddenActionException.class, () -> coverVersionService.approveCoverVersion(manuscriptId, versionNumber, notAuthorUser));
+
+        verify(coverVersionRepository, never()).unapproveAllByManuscript_ManuscriptId(any());
+        verify(coverVersionRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Спроба підтвердження неіснуючої версії обкладинки")
+    void approveCoverVersion_CoverVersionNotFoundException() {
+        UUID manuscriptId = UUID.randomUUID();
+        UUID authorId = UUID.randomUUID();
+        int versionNumber = 1;
+
+        Manuscript manuscript = new Manuscript(
+                manuscriptId,
+                "Назва",
+                authorId,
+                ManuscriptStatus.IN_DESIGN,
+                Set.of(),
+                "Анотація",
+                "url",
+                Instant.now()
+        );
+
+        when(manuscriptRepository.findById(manuscriptId)).thenReturn(Optional.of(manuscript));
+        when(coverVersionRepository.findByManuscript_ManuscriptIdAndVersionNumber(manuscriptId, versionNumber)).thenReturn(null);
+
+        AuthenticatedUser authorUser = asUser(authorId);
+        assertThrows(CoverVersionNotFoundException.class, () -> coverVersionService.approveCoverVersion(manuscriptId, versionNumber, authorUser));
 
         verify(coverVersionRepository, never()).unapproveAllByManuscript_ManuscriptId(any());
         verify(coverVersionRepository, never()).save(any());

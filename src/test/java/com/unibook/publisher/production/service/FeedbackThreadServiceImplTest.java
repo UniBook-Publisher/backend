@@ -26,7 +26,6 @@ import com.unibook.publisher.production.enums.ManuscriptStatus;
 import com.unibook.publisher.production.enums.SuggestionStatus;
 import com.unibook.publisher.production.enums.ThreadStatus;
 import com.unibook.publisher.production.repository.*;
-import com.unibook.publisher.storage.FileStorageService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,10 +34,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 
@@ -66,7 +62,7 @@ public class FeedbackThreadServiceImplTest {
     private RevisionRepository revisionRepository;
 
     @Mock
-    private FileStorageService fileStorageService;
+    private RevisionTextReader revisionTextReader;
 
     @Mock
     private UserLookupService userLookupService;
@@ -664,7 +660,7 @@ public class FeedbackThreadServiceImplTest {
 
         when(chapterRepository.findById(chapterId)).thenReturn(Optional.of(chapter));
         when(revisionRepository.findById(revisionId)).thenReturn(Optional.of(revision));
-        when(fileStorageService.get("path/to/empty.txt")).thenReturn(new ByteArrayInputStream(new byte[0]));
+        when(revisionTextReader.readText("path/to/empty.txt")).thenReturn("");
 
         OpenThreadRequest request = new OpenThreadRequest(
                 "Початкове повідомлення",
@@ -693,8 +689,7 @@ public class FeedbackThreadServiceImplTest {
 
         when(chapterRepository.findById(chapterId)).thenReturn(Optional.of(chapter));
         when(revisionRepository.findById(revisionId)).thenReturn(Optional.of(revision));
-        when(fileStorageService.get("path/to/file.txt"))
-                .thenAnswer(_ -> new ByteArrayInputStream("Текст для перевірки".getBytes(StandardCharsets.UTF_8)));
+        when(revisionTextReader.readText("path/to/file.txt")).thenReturn("Текст для перевірки");
 
         OpenThreadRequest request1 = new OpenThreadRequest(
                 "Початкове повідомлення",
@@ -759,8 +754,7 @@ public class FeedbackThreadServiceImplTest {
 
         when(chapterRepository.findById(chapterId)).thenReturn(Optional.of(chapter));
         when(revisionRepository.findById(revisionId)).thenReturn(Optional.of(revision));
-        when(fileStorageService.get("path/to/file.txt"))
-                .thenReturn(new ByteArrayInputStream("Текст для перевірки".getBytes(StandardCharsets.UTF_8)));
+        when(revisionTextReader.readText("path/to/file.txt")).thenReturn("Текст для перевірки");
 
         OpenThreadRequest request = new OpenThreadRequest(
                 "Початкове повідомлення",
@@ -788,8 +782,7 @@ public class FeedbackThreadServiceImplTest {
 
         when(chapterRepository.findById(chapterId)).thenReturn(Optional.of(chapter));
         when(revisionRepository.findById(revisionId)).thenReturn(Optional.of(revision));
-        when(fileStorageService.get("path/to/file.txt"))
-                .thenReturn(new ByteArrayInputStream("Текст для перевірки".getBytes(StandardCharsets.UTF_8)));
+        when(revisionTextReader.readText("path/to/file.txt")).thenReturn("Текст для перевірки");
         when(threadRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         UserSummary authorSummary = new UserSummary(authorId, "author@gmail.com", "Автор", UserRole.AUTHOR, "https://avatar.url/1.png");
@@ -894,13 +887,8 @@ public class FeedbackThreadServiceImplTest {
         when(chapterRepository.findById(chapterId)).thenReturn(Optional.of(chapter));
         when(revisionRepository.findById(revisionId)).thenReturn(Optional.of(revision));
 
-        InputStream failingStream = new InputStream() {
-            @Override
-            public int read() throws IOException {
-                throw new IOException("S3 connection interrupted");
-            }
-        };
-        when(fileStorageService.get("path/to/corrupted.txt")).thenReturn(failingStream);
+        when(revisionTextReader.readText("path/to/corrupted.txt"))
+                .thenThrow(new FileReadException("path/to/corrupted.txt", new IOException("S3 connection interrupted")));
 
         OpenThreadRequest request = new OpenThreadRequest(
                 "Початкове повідомлення",

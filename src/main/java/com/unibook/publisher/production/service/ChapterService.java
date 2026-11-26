@@ -33,4 +33,6 @@ public interface ChapterService {
     List<RevisionResponse> getRevisionsByChapterId(UUID chapterId);
 
     DiffResponse getDiffChapter(UUID chapterId, DiffRequest request);
+
+    String getRevisionContent(UUID chapterId, int versionNumber);
 }

@@ -1,5 +1,6 @@
 package com.unibook.publisher.production.controller;
 
+import com.unibook.publisher.production.entity.response.FileUrlResponse;
 import com.unibook.publisher.storage.FileStorageService;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
@@ -19,20 +20,9 @@ public class StorageController {
     }
 
     @GetMapping("/files/url")
-    public ResponseEntity<String> getPresignedUrl(@RequestParam("path") String path) {
+    public ResponseEntity<FileUrlResponse> getPresignedUrl(@RequestParam("path") String path) {
         String url = fileStorageService.getPresignedUrl(path);
-        return ResponseEntity.ok(url);
-    }
-
-    @GetMapping("/exists")
-    public ResponseEntity<Boolean> checkExists(@RequestParam("path") String path) {
-        return ResponseEntity.ok(fileStorageService.exists(path));
-    }
-
-    @DeleteMapping("/files")
-    public ResponseEntity<Void> deleteFile(@RequestParam("path") String path) {
-        fileStorageService.delete(path);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(new FileUrlResponse(url));
     }
 
     @GetMapping("/raw") // Використовуємо як аналог getPresignedUrl для локальних файлів

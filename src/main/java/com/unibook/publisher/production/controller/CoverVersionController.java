@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
+import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
+
 @RestController
 @RequestMapping("/api/v1/manuscripts")
 @Tag(name = "Cover versions", description = "Cover design versions uploaded by the assigned designer")
@@ -34,7 +36,9 @@ public class CoverVersionController {
         this.logger = logger;
     }
 
-    @PostMapping("/{id}/cover-versions")
+    @PostMapping(
+            value = "/{id}/cover-versions",
+            consumes = MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Upload a cover version", description = "Adds a new cover version to a manuscript that is IN_DESIGN. Only the designer assigned to the manuscript can do this")
         @ApiResponse(responseCode = "200", description = "Cover version successfully uploaded")
         @ApiResponse(responseCode = "400", description = "Request validation error", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
@@ -45,11 +49,9 @@ public class CoverVersionController {
             @Parameter(description = "Manuscript ID", required = true, example = "7c9e6679-7425-40de-944b-e07fc1f90ae7")
             @PathVariable UUID id,
             @AuthenticationPrincipal AuthenticatedUser currentUser,
-            @RequestParam MultipartFile file
+            @RequestPart("file") MultipartFile file
     ) {
-        if (file.isEmpty())
-            throw new FileIsEmptyException();
-
+        if (file.isEmpty()) throw new FileIsEmptyException();
         try {
             return ResponseEntity.ok(coverVersionService.uploadCoverVersion(
                     id,
@@ -85,7 +87,7 @@ public class CoverVersionController {
     public ResponseEntity<CoverVersionResponse> approveCoverVersion(
             @Parameter(description = "Manuscript ID", required = true, example = "7c9e6679-7425-40de-944b-e07fc1f90ae7")
             @PathVariable UUID manuscriptId,
-            @Parameter(description = "Cover version ID", required = true, example = "8c9e6679-7425-40de-944b-e07fc1f90ae7")
+            @Parameter(description = "Cover version number", required = true, example = "1")
             @PathVariable int versionNumber,
             @AuthenticationPrincipal AuthenticatedUser currentUser) {
         return ResponseEntity.ok(coverVersionService.approveCoverVersion(manuscriptId, versionNumber, currentUser));
