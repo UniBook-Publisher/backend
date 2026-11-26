@@ -1,5 +1,6 @@
 package com.unibook.publisher.production.service;
 
+import com.unibook.publisher.common.audit.AuditAction;
 import com.unibook.publisher.common.enums.UserRole;
 import com.unibook.publisher.common.event.CoverVersionAddedEvent;
 import com.unibook.publisher.common.exception.badrequest.InvalidFileTypeException;
@@ -67,6 +68,7 @@ public class CoverVersionServiceImpl implements CoverVersionService {
 
     @Override
     @Transactional
+    @AuditAction("UPLOAD_COVER_VERSION")
     public CoverVersionResponse uploadCoverVersion(
             UUID manuscriptId,
             AuthenticatedUser currentUser,
@@ -150,6 +152,7 @@ public class CoverVersionServiceImpl implements CoverVersionService {
 
     @Override
     @Transactional
+    @AuditAction("APPROVE_COVER_VERSION")
     public CoverVersionResponse approveCoverVersion(UUID manuscriptId, int versionNumber, AuthenticatedUser currentUser) {
         Manuscript manuscript = manuscriptRepository.findById(manuscriptId)
                 .orElseThrow(() -> new ManuscriptNotFoundException(manuscriptId));

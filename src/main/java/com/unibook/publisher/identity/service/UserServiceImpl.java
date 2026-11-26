@@ -1,5 +1,6 @@
 package com.unibook.publisher.identity.service;
 
+import com.unibook.publisher.common.audit.AuditAction;
 import com.unibook.publisher.common.enums.UserRole;
 import com.unibook.publisher.common.exception.conflict.EmailAlreadyExistsException;
 import com.unibook.publisher.common.exception.notfound.UserNotFoundException;
@@ -153,6 +154,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    @AuditAction("UPDATE_USER_PROFILE")
     public UserResponse updateUserProfile(UUID profileUserId, AuthenticatedUser currentUser, UserProfileUpdateRequest request) {
         if (!currentUser.id().equals(profileUserId))
             throw new ForbiddenActionException("Користувач має право редагувати тільки свій профіль");
@@ -175,6 +177,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     @PreAuthorize("hasRole('ADMIN')")
+    @AuditAction("CREATE_STAFF")
     public UserResponse createStaff(StaffRequest request) {
         if (userRepository.existsByEmail(request.email()))
             throw new EmailAlreadyExistsException(request.email());
@@ -210,6 +213,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     @PreAuthorize("hasRole('ADMIN')")
+    @AuditAction("DELETE_USER")
     public void deleteUser(UUID id) {
         if (!userRepository.existsById(id))
             throw new UserNotFoundException(id);

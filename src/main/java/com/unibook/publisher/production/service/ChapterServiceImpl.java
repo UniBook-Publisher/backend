@@ -1,5 +1,6 @@
 package com.unibook.publisher.production.service;
 
+import com.unibook.publisher.common.audit.AuditAction;
 import com.unibook.publisher.common.enums.UserRole;
 import com.unibook.publisher.common.event.RevisionAddedEvent;
 import com.unibook.publisher.common.exception.badrequest.InvalidFileTypeException;
@@ -75,6 +76,7 @@ public class ChapterServiceImpl implements ChapterService {
 
     @Override
     @Transactional
+    @AuditAction("CREATE_CHAPTER")
     public ChapterResponse createChapter(UUID manuscriptId, AuthenticatedUser currentUser, ChapterCreationRequest request) {
         UUID authorId = currentUser.id();
 
@@ -118,6 +120,7 @@ public class ChapterServiceImpl implements ChapterService {
 
     @Override
     @Transactional
+    @AuditAction("UPLOAD_REVISION")
     public RevisionResponse uploadRevision(
             UUID chapterId,
             AuthenticatedUser currentUser,
@@ -285,6 +288,7 @@ public class ChapterServiceImpl implements ChapterService {
 
     @Override
     @Transactional
+    @AuditAction("UPDATE_CHAPTER")
     public ChapterResponse updateChapter(UUID chapterId, AuthenticatedUser currentUser, ChapterUpdateRequest request) {
         UUID authorId = currentUser.id();
 
@@ -306,6 +310,7 @@ public class ChapterServiceImpl implements ChapterService {
 
     @Override
     @Transactional
+    @AuditAction("DELETE_CHAPTER")
     public void deleteChapter(UUID chapterId, AuthenticatedUser currentUser) {
         UUID authorId = currentUser.id();
 
